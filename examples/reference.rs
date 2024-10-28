@@ -1,8 +1,8 @@
-use builder_a::{ABuild, ABuilderSetHost, ABuilderSetLogging, ABuilderSetPort};
+use builder_a::{ABuilderInitial, ABuilderSetHost, ABuilderSetPort, ABuilderState};
 
 #[derive(Debug)]
-pub struct A {
-    pub logging: bool,
+pub struct A<T> {
+    pub logging: Option<T>,
     pub port: u16,
     pub host: String,
 }
@@ -10,33 +10,44 @@ pub struct A {
 mod builder_a {
     use super::A;
 
-    impl A {
+    impl<T> A<T> {
         pub fn builder() -> ABuilderInitial {
             ABuilderInitial {}
         }
     }
 
     // initial
-    pub trait ABuilderState {}
+    pub trait ABuilderState {
+        fn build<T>(mut self) -> A<T>
+        where
+            Self: ABuilderGetLogging<T> + ABuilderGetPort + ABuilderGetHost + Sized,
+        {
+            A {
+                logging: self.get_logging(),
+                port: self.get_port(),
+                host: self.get_host(),
+            }
+        }
+    }
 
-    #[derive(Debug)]
+    #[derive(Debug, Default)]
     pub struct ABuilderInitial {}
 
     impl ABuilderState for ABuilderInitial {}
 
     // logging
     #[derive(Debug)]
-    pub struct ABuilderLoggingSet<I: ABuilderState> {
-        logging: bool,
+    pub struct ABuilderLoggingSet<T, I: ABuilderState> {
+        logging: Option<Option<T>>,
         inner: I,
     }
 
-    impl<I: ABuilderState> ABuilderState for ABuilderLoggingSet<I> {}
+    impl<T, I: ABuilderState> ABuilderState for ABuilderLoggingSet<T, I> {}
 
     pub trait ABuilderSetLogging: Sized + ABuilderState {
-        fn logging(self, logging: bool) -> ABuilderLoggingSet<Self> {
+        fn logging<T>(self, logging: Option<T>) -> ABuilderLoggingSet<T, Self> {
             ABuilderLoggingSet {
-                logging,
+                logging: Some(logging),
                 inner: self,
             }
         }
@@ -44,23 +55,29 @@ mod builder_a {
 
     impl<T: ABuilderState> ABuilderSetLogging for T {}
 
-    pub trait ABuilderGetLogging {
-        fn get_logging(&self) -> bool;
+    #[diagnostic::on_unimplemented(
+        message = "LOGGING My Message for `SourceBuilder` is not implemented for `{Self}`",
+        label = "My Label",
+        note = "Note 1",
+        note = "Note 2"
+    )]
+    pub trait ABuilderGetLogging<T> {
+        fn get_logging(&mut self) -> Option<T>;
     }
 
-    impl<I: ABuilderState> ABuilderGetLogging for ABuilderLoggingSet<I> {
-        fn get_logging(&self) -> bool {
-            self.logging
+    impl<T, I: ABuilderState> ABuilderGetLogging<T> for ABuilderLoggingSet<T, I> {
+        fn get_logging(&mut self) -> Option<T> {
+            self.logging.take().expect("@TODO")
         }
     }
 
-    impl<T: ABuilderState + ABuilderGetPort> ABuilderGetPort for ABuilderLoggingSet<T> {
+    impl<T, I: ABuilderState + ABuilderGetPort> ABuilderGetPort for ABuilderLoggingSet<T, I> {
         fn get_port(&mut self) -> u16 {
             self.inner.get_port()
         }
     }
 
-    impl<T: ABuilderState + ABuilderGetHost> ABuilderGetHost for ABuilderLoggingSet<T> {
+    impl<T, I: ABuilderState + ABuilderGetHost> ABuilderGetHost for ABuilderLoggingSet<T, I> {
         fn get_host(&mut self) -> String {
             self.inner.get_host()
         }
@@ -96,8 +113,8 @@ mod builder_a {
         }
     }
 
-    impl<T: ABuilderState + ABuilderGetLogging> ABuilderGetLogging for ABuilderPortSet<T> {
-        fn get_logging(&self) -> bool {
+    impl<T, I: ABuilderState + ABuilderGetLogging<T>> ABuilderGetLogging<T> for ABuilderPortSet<I> {
+        fn get_logging(&mut self) -> Option<T> {
             self.inner.get_logging()
         }
     }
@@ -128,6 +145,12 @@ mod builder_a {
 
     impl<T: ABuilderState> ABuilderSetHost for T {}
 
+    #[diagnostic::on_unimplemented(
+        message = "HOST My Message for `SourceBuilder` is not implemented for `{Self}`",
+        label = "My Label",
+        note = "Note 1",
+        note = "Note 2"
+    )]
     pub trait ABuilderGetHost {
         fn get_host(&mut self) -> String;
     }
@@ -138,8 +161,8 @@ mod builder_a {
         }
     }
 
-    impl<T: ABuilderState + ABuilderGetLogging> ABuilderGetLogging for ABuilderHostSet<T> {
-        fn get_logging(&self) -> bool {
+    impl<T, I: ABuilderState + ABuilderGetLogging<T>> ABuilderGetLogging<T> for ABuilderHostSet<I> {
+        fn get_logging(&mut self) -> Option<T> {
             self.inner.get_logging()
         }
     }
@@ -151,29 +174,29 @@ mod builder_a {
     }
 
     // builder finalize
-    pub trait ABuild: ABuilderState {
-        fn build(self) -> A;
-    }
-
-    impl<T: ABuilderState + ABuilderGetLogging + ABuilderGetPort + ABuilderGetHost> ABuild for T {
-        fn build(mut self) -> A {
-            A {
-                logging: self.get_logging(),
-                port: self.get_port(),
-                host: self.get_host(),
-            }
-        }
-    }
+    // pub trait ABuild: ABuilderState {
+    //     fn build<T>(self) -> A<T>;
+    // }
+    //
+    // impl<I: ABuilderState + ABuilderGetLogging + ABuilderGetPort + ABuilderGetHost> ABuild for I {
+    //     fn build<T>(mut self) -> A<T> {
+    //         A {
+    //             logging: self.get_logging(),
+    //             port: self.get_port(),
+    //             host: self.get_host(),
+    //         }
+    //     }
+    // }
 }
 
 fn main() {
-    let state = A::builder()
-        .logging(true)
+    // let state = A::builder()
+    let state = ABuilderInitial::default()
+        // .logging(Some(true))
         .port(8080)
         .host("localhost".to_owned())
-        .port(443)
-        .logging(false);
-    dbg!(&state);
+        .port(443);
+    // .logging::<bool>(None);
     let a = state.build();
-    dbg!(&a);
+    dbg!(a);
 }

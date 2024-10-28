@@ -1,42 +1,58 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, marker::PhantomData};
 
 use buildit::Builder;
 
-#[derive(Builder)]
-pub struct Config<'a, T>
+// TODO: field with multiple generics and lifetimes
+#[derive(Builder, Debug)]
+pub struct Config<'a, 'b, T, K, V>
 where
     T: Sized + Debug,
 {
-    #[builder(skip)]
+    // #[builder(skip)]
     pub u: &'a T,
-    pub log: bool,
+    pub log: LogRecord<'a, 'b, K, V>,
+}
+
+#[derive(Debug)]
+pub struct LogRecord<'a, 'b, K, V> {
+    _key: K,
+    _v: V,
+    _k: PhantomData<&'a K>,
+    _vv: PhantomData<&'b V>,
 }
 
 fn main1() {
-    let builder = Config::<u8>::builder();
+    let builder = Config::<u8, &'static str, ()>::builder()
+        .u(&42)
+        .log(LogRecord {
+            _key: 42,
+            _v: 42,
+            _k: Default::default(),
+            _vv: Default::default(),
+        })
+        .build();
     dbg!(&builder);
 }
 
-#[derive(Builder)]
+#[derive(Builder, Debug)]
 pub struct Config2 {
-    #[builder(skip)]
     pub u: String,
     pub port: u16,
 }
 
 fn main2() {
-    let builder = Config2::builder();
+    let builder = Config2::builder().port(42).u("test".to_owned()).build();
     dbg!(&builder);
 }
 
-#[derive(Builder)]
+#[derive(Builder, Debug)]
 pub struct Config3<T: Debug> {
     pub u: T,
     pub port: u16,
 }
 
 fn main3() {
-    let builder = Config3::<u8>::builder();
+    let builder = Config3::<u8>::builder().u(42).port(10).build();
     dbg!(&builder);
 }
 
