@@ -71,7 +71,7 @@ pub(crate) struct InitialState {
 
 impl InitialState {
     pub(crate) fn new(source: &Source) -> Self {
-        let ident = format_ident!("{}Builder", &source.ident);
+        let ident = source.base_ident();
         InitialState { ident }
     }
 }
@@ -80,8 +80,14 @@ impl ToTokens for InitialState {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let Self { ident, .. } = self;
         tokens.extend(quote! {
-            #[derive(Debug)]
+            #[derive(Default, Debug)]
             pub struct #ident;
+
+            impl #ident {
+                pub fn new() -> Self {
+                    Self::default()
+                }
+            }
         })
     }
 }

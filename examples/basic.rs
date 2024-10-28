@@ -22,11 +22,12 @@ pub struct LogRecord<'a, 'b, K, V> {
 }
 
 fn main1() {
-    let builder = Config::<u8, &'static str, ()>::builder()
+    // let builder = Config::<u8, &'static str, ()>::builder()
+    let builder = ConfigBuilder::new()
         .u(&42)
         .log(LogRecord {
             _key: 42,
-            _v: 42,
+            _v: "test",
             _k: Default::default(),
             _vv: Default::default(),
         })

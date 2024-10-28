@@ -137,16 +137,7 @@ impl<'a> ToTokens for FieldSetterTrait<'a> {
             field,
             ..
         } = self;
-        let field_ident = format_ident!(
-            "{}",
-            field
-                .attributes
-                .ident
-                .as_ref()
-                .unwrap()
-                .to_string()
-                .to_case(Case::Lower)
-        );
+        let field_ident = format_ident!("{}", field.attributes.ident.as_ref().unwrap().to_string());
         let field_state_ident = &field_state.ident;
         let state_trait_ident = &state_trait.ident;
         let field_type = &field.attributes.ty;
