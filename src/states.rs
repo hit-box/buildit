@@ -54,7 +54,6 @@ impl<'a> ToTokens for FieldState<'a> {
         let lifetimes = field.lifetimes.iter().collect::<Vec<_>>();
         let generics = field.generics.iter().collect::<Vec<_>>();
         tokens.extend(quote! {
-            #[derive(Debug)]
             pub struct #ident<#( #lifetimes, )* #( #generics, )* InnerBuilderState: #state_trait_ident> {
                 inner: InnerBuilderState,
                 #field_ident: Option<#field_type>,
@@ -80,7 +79,7 @@ impl ToTokens for InitialState {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let Self { ident, .. } = self;
         tokens.extend(quote! {
-            #[derive(Default, Debug)]
+            #[derive(Default)]
             pub struct #ident;
 
             impl #ident {
