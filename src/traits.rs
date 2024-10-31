@@ -4,7 +4,7 @@ use quote::{format_ident, quote, ToTokens};
 use syn::Ident;
 
 use crate::{
-    parser::{Field, Source},
+    parser::{DefaultAttribute, Field, Source},
     states::{FieldState, InitialState},
 };
 
@@ -162,7 +162,7 @@ impl<'a> ToTokens for FieldSetterTrait<'a> {
 pub(crate) struct FieldGetterTrait<'a> {
     ident: Ident,
     fn_ident: Ident,
-    field: &'a Field<'a>,
+    pub(crate) field: &'a Field<'a>,
 }
 
 // @TODO: add field's generics and lifetimes
@@ -292,5 +292,52 @@ impl<'a> ToTokens for FieldGetterTraitImpl<'a> {
                 }
             });
         }
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct FieldGetterTraitDefaultImpl<'a> {
+    getter_trait: &'a FieldGetterTrait<'a>,
+    state: &'a InitialState,
+    default: &'a DefaultAttribute,
+}
+
+impl<'a> FieldGetterTraitDefaultImpl<'a> {
+    pub(crate) fn new(
+        getter_trait: &'a FieldGetterTrait<'a>,
+        state: &'a InitialState,
+        default: &'a DefaultAttribute,
+    ) -> Self {
+        FieldGetterTraitDefaultImpl {
+            getter_trait,
+            state,
+            default,
+        }
+    }
+}
+
+impl<'a> ToTokens for FieldGetterTraitDefaultImpl<'a> {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let Self {
+            getter_trait,
+            state,
+            default,
+        } = self;
+        let getter_generics_declaration = getter_trait.generics_declaration();
+        let getter_fn_ident = &getter_trait.fn_ident;
+        let field_ty = &getter_trait.field.attributes.ty;
+        let getter_trait_ident = &getter_trait.ident;
+        let state_ident = &state.ident;
+        let default_expr = match default {
+            DefaultAttribute::Default => quote! { <#field_ty>::default() },
+            DefaultAttribute::Expr(expr) => quote! { #expr },
+        };
+        tokens.extend(quote! {
+            impl #getter_generics_declaration #getter_trait_ident #getter_generics_declaration for #state_ident {
+                fn #getter_fn_ident(&mut self) -> #field_ty {
+                    #default_expr
+                }
+            }
+        })
     }
 }

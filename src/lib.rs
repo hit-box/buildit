@@ -3,7 +3,9 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use states::{FieldState, InitialState};
 use syn::{parse_macro_input, DeriveInput, Error};
-use traits::{FieldGetterTrait, FieldGetterTraitImpl, FieldSetterTrait};
+use traits::{
+    FieldGetterTrait, FieldGetterTraitDefaultImpl, FieldGetterTraitImpl, FieldSetterTrait,
+};
 
 use crate::generator::Generator;
 use crate::parser::Source;
@@ -52,6 +54,15 @@ fn derive_imp(input: &DeriveInput) -> Result<TokenStream, Error> {
             FieldSetterTrait::new(&source, field, &state_trait, field_state)
         })
         .collect::<Vec<_>>();
+    let default_getters_impls =
+        field_getter_traits
+            .iter()
+            .filter_map(|getter| {
+                getter.field.attributes.default.as_ref().map(|default| {
+                    FieldGetterTraitDefaultImpl::new(getter, &initial_state, default)
+                })
+            })
+            .collect::<Vec<_>>();
     let generator = Generator::new(
         &source,
         &state_trait,
@@ -60,6 +71,7 @@ fn derive_imp(input: &DeriveInput) -> Result<TokenStream, Error> {
         &field_setter_traits,
         &field_getter_traits,
         &fields_getter_trait_impls,
+        &default_getters_impls,
     )?;
     Ok(quote! { #generator })
 }

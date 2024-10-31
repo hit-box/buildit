@@ -6,7 +6,10 @@ use syn::{Error, Ident};
 use crate::{
     parser::Source,
     states::{FieldState, InitialState},
-    traits::{FieldGetterTrait, FieldGetterTraitImpl, FieldSetterTrait, StateTrait},
+    traits::{
+        FieldGetterTrait, FieldGetterTraitDefaultImpl, FieldGetterTraitImpl, FieldSetterTrait,
+        StateTrait,
+    },
 };
 
 #[derive(Debug)]
@@ -18,6 +21,7 @@ pub(crate) struct Generator<'a> {
     pub(crate) field_setter_traits: &'a Vec<FieldSetterTrait<'a>>,
     pub(crate) field_getter_traits: &'a Vec<FieldGetterTrait<'a>>,
     pub(crate) field_getter_trait_impls: &'a Vec<FieldGetterTraitImpl<'a>>,
+    pub(crate) field_getter_trait_default_impls: &'a Vec<FieldGetterTraitDefaultImpl<'a>>,
 }
 
 impl<'a> Generator<'a> {
@@ -29,6 +33,7 @@ impl<'a> Generator<'a> {
         field_setter_traits: &'a Vec<FieldSetterTrait<'a>>,
         field_getter_traits: &'a Vec<FieldGetterTrait<'a>>,
         field_getter_trait_impls: &'a Vec<FieldGetterTraitImpl<'a>>,
+        field_getter_trait_default_impls: &'a Vec<FieldGetterTraitDefaultImpl<'a>>,
     ) -> Result<Self, Error> {
         Ok(Generator {
             source,
@@ -38,6 +43,7 @@ impl<'a> Generator<'a> {
             field_setter_traits,
             field_getter_traits,
             field_getter_trait_impls,
+            field_getter_trait_default_impls,
         })
     }
 }
@@ -52,6 +58,7 @@ impl<'a> ToTokens for Generator<'a> {
             field_setter_traits,
             field_getter_traits,
             field_getter_trait_impls,
+            field_getter_trait_default_impls,
             ..
         } = self;
         let struct_name = &source.ident;
@@ -73,6 +80,7 @@ impl<'a> ToTokens for Generator<'a> {
                 #( #field_setter_traits )*
                 #( #field_getter_traits )*
                 #( #field_getter_trait_impls )*
+                #( #field_getter_trait_default_impls )*
             }
             #imports
 

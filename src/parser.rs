@@ -3,17 +3,35 @@ use darling::{
     usage::{GenericsExt, IdentSet, LifetimeSet, Purpose, UsesLifetimes, UsesTypeParams},
     uses_lifetimes, uses_type_params,
     util::Ignored,
-    FromDeriveInput, FromField,
+    FromAttributes, FromDeriveInput, FromField, FromMeta,
 };
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use syn::{Error, Generics, Ident, Type};
+use syn::{Error, Expr, Generics, Ident, Meta, Type};
+
+#[derive(FromMeta, Debug, Default)]
+pub(crate) enum DefaultAttribute {
+    #[darling(word)]
+    #[default]
+    Default,
+    Expr(Expr),
+}
+
+fn parse_default(meta: &Meta) -> darling::Result<Option<DefaultAttribute>> {
+    let expr = <Option<Expr>>::from_meta(meta);
+    match expr {
+        Ok(Some(expr)) => Ok(Some(DefaultAttribute::Expr(expr))),
+        _ => <Option<DefaultAttribute>>::from_meta(meta),
+    }
+}
 
 #[derive(Debug, FromField)]
 #[darling(attributes(builder))]
 pub(crate) struct FieldAttributes {
     pub(crate) ident: Option<Ident>,
     pub(crate) ty: Type,
+    #[darling(with = parse_default)]
+    pub(crate) default: Option<DefaultAttribute>,
 }
 
 uses_lifetimes!(FieldAttributes, ty);
@@ -64,7 +82,7 @@ impl<'a> Field<'a> {
 }
 
 #[derive(Debug, FromDeriveInput)]
-#[darling(attributes(lorem), supports(struct_named))]
+#[darling(attributes(builder), supports(struct_named))]
 pub(crate) struct Source {
     pub(crate) ident: Ident,
     pub(crate) generics: Generics,
