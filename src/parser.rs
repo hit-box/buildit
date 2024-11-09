@@ -3,7 +3,7 @@ use darling::{
     usage::{GenericsExt, IdentSet, LifetimeSet, Purpose, UsesLifetimes, UsesTypeParams},
     uses_lifetimes, uses_type_params,
     util::Ignored,
-    FromAttributes, FromDeriveInput, FromField, FromMeta,
+    FromDeriveInput, FromField, FromMeta,
 };
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};

@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 use darling::FromDeriveInput;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -18,7 +20,6 @@ mod traits;
 
 #[proc_macro_derive(Builder, attributes(builder))]
 pub fn derive_buildit(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    // test for types test
     let input = parse_macro_input!(input as DeriveInput);
     match derive_imp(&input) {
         Ok(output) => output.into(),

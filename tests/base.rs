@@ -5,7 +5,6 @@ pub struct A<'a, T>
 where
     T: Sized + 'a,
 {
-    #[builder(skip)]
     pub u: &'a T,
 }
 

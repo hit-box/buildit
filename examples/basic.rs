@@ -2,13 +2,11 @@ use std::{fmt::Debug, marker::PhantomData};
 
 use buildit::Builder;
 
-// TODO: field with multiple generics and lifetimes
 #[derive(Builder, Debug)]
 pub struct Config<'a, 'b, T, K, V>
 where
     T: Sized + Debug,
 {
-    // #[builder(skip)]
     pub u: &'a T,
     pub log: LogRecord<'a, 'b, K, V>,
 }
